@@ -1,11 +1,44 @@
 import { comparePassword, hashPassword } from "../helpers/bcryptPassword.js"
 import userModels from "../models/userModels.js"
 import JWT from 'jsonwebtoken'
+import orderModel from "../models/orderModel .js"
 
+// fetch all user order
+export const userOrderController=async(req,res)=>{
+  try {
+    const userorder=await orderModel.find({buyer:req.user._id}).populate("products", "-photo").populate('buyer',"name")
+    // res.json(userorder)
+    res.status(200).send({success:true,message:'fetched all user order',userorder})
+  } catch (error) {
+    res.status(500).send({success:true,message:'fetched all user order',error})
+  }
+} 
+
+// fetch all  order in admin
+export const allOrderController=async(req,res)=>{
+  try {
+    const allorder=await orderModel.find().populate("products", "-photo").populate('buyer',"name").sort({createdAt:-1})
+    // res.json(userorder)
+    res.status(200).send({success:true,message:'fetched all  order',allorder})
+  } catch (error) {
+    res.status(500).send({success:true,message:'fetched all  order',error})
+  }
+} 
+
+// update order status in admin
+export const updateOrderstatusController=async(req,res)=>{
+  try {
+    const {orderId}=req.params
+    const {status}=req.body
+    const updatedorder=await orderModel.findByIdAndUpdate(orderId,{status:status},{ new: true })
+    res.status(200).send({success:true,message:'successfully updated order status',updatedorder})
+  } catch (error) {
+    res.status(500).send({success:false,message:'error in updating order status'})
+  }
+}
 const registerController =async(req,res)=>{
   try {
     const {name,email,phone,password,address,question}=req.body
-    console.log('inside RegisterController ',name,password,question)
     // validation
     if(!name||!email||!phone||!password||!address){
         return res.send({error:'fill the required field'})
@@ -42,7 +75,6 @@ export const updateUserDetailsController =async(req,res)=>{
   try {
 
     const {name,phone,password,address}=req.body.userdata
-    console.log('req.body in update profile',name,phone,password,address)
     let hashedPassword=''
     const existingUser=await userModels.findById(req.user._id)
     if(password&&password.length<6){
@@ -78,7 +110,6 @@ export const updateUserDetailsController =async(req,res)=>{
 export const loginController=async(req,res)=>{
   try {
     const {email,password}=req.body
-    // console.log(email,password)
     if(!email||!password){
       return res.status(404).send({
         success:false,
@@ -93,7 +124,6 @@ export const loginController=async(req,res)=>{
         message:'email is not registered'
       })
     }
-      // console.log(password,user.password)
     const match=await comparePassword(password,user.password)
     if (!match) {
       return res.status(500).send({

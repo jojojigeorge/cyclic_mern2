@@ -1,14 +1,13 @@
 import express from "express";
 import { isAdmin, requireSignIn } from "../middlewares/authMiddleware.js";
 import formidable from 'express-formidable';
-import { BraintreePaymentController, BraintreeTokenController, createProductController, deleteProduct, filterProductByPriceCategory, getAllProduct, getProductDetails, getProductPhoto, getSimilarProducts, productListController, productSearch, updateProductController } from "../controllers/ProductController.js";
+import {  createOrder, createProductController, deleteProduct, filterProductByPriceCategory, getAllProduct, getProductDetails, getProductPhoto, getSimilarProducts, numberofProducts, productListController, productSearch, updateProductController, verifyPaymentController } from "../controllers/ProductController.js";
 
 const router=express.Router()
-// payment routes token
-router.get("/braintree/token",BraintreeTokenController)
-
-// payment 
-router.post("/braintree/payment",requireSignIn,BraintreePaymentController)
+// create order
+router.post("/create-order",requireSignIn,createOrder)
+// verify payment
+router.post("/verify-payment",requireSignIn,verifyPaymentController)
 
 // create new product
 router.post("/create-product",requireSignIn,isAdmin,formidable(),createProductController)
@@ -33,6 +32,8 @@ router.post("/filter-product",filterProductByPriceCategory)
 
 // product per page
 router.get("/product-list/:page",productListController)
+// no of products
+router.get("/number-products",numberofProducts)
 
 // search product
 router.get("/search/:keyword",productSearch)

@@ -3,38 +3,70 @@ import Layout from "../components/Layout/Layout";
 import { useAuth } from "../context/Auth";
 import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
-import DropIn from "braintree-web-drop-in-react"
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const CartPage = () => {
-  const [clientToken,setClientToken]=useState('')
-  const [instance,setInstance]=useState('')
-  const [loading,setLoading]=useState('')
-
-
   const navigate = useNavigate();
   const [authDetails, setAuthDetails] = useAuth();
   const [cartDetails, setCartDetails] = useCart();
-
-
-  // get token for payment
-  const getToken=async()=>{
-    try {
-      const {data}=await axios.get("/api/v1/product/braintree/token")
-      setClientToken(data?.clientToken)
-    } catch (error) {
-      console.log(error)  
-    }
-  }
-  const handlePayment=()=>{}
-useEffect(()=>{
-  getToken()
-},[authDetails?.token])
-  // calculate total cart price
+  let newOrder = {};
+  // calculate total cart price 
   const totalPrice = () => {
     let total = 0;
     cartDetails.map((p) => (total = total + p.price));
     return total;
+  };
+  // remove cart item from local storage
+  const handleClearCart = () => {
+      setCartDetails([]);
+    localStorage.removeItem("cart");
+    // toast.success("cart item  successfully", { duration: 6000 });
+  };
+
+  // handle checkout place order
+  const handleCheckout = async (e) => { 
+    try {
+      const { data } = await axios.post("/api/v1/product/create-order", { cartDetails });
+      
+      console.log("after order created first time", data);
+      newOrder = data.newOrder;
+      var options = {
+        key: "rzp_test_Wg7kegePFl1cq5", // Enter the Key ID generated from the Dashboard
+        amount: data.order.amount, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+        currency: "INR",
+        name: "MERN @2",
+        description: "Test Transaction",
+        // "image": "/favicon.png",
+        order_id: data.order.id, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+        handler: async function (response) {
+          const { data } = await axios.post("/api/v1/product/verify-payment", { response, newOrder });
+          if(data.success)
+            handleClearCart()
+        },
+        prefill: {
+          name: "Gaurav Kumar",
+          email: "gaurav.kumar@example.com",
+          contact: "9000090000",
+        },
+        notes: {
+          address: "Razorpay Corporate Office",
+        },
+        theme: {
+          color: "#3399cc",
+        },
+      };
+      var rzp1 = new Razorpay(options);
+      rzp1.on("payment.failed", function (response) {
+        console.log(response.error.code);
+      });
+      // document.getElementById('rzp-button1').onclick = function(e){
+      rzp1.open();
+      e.preventDefault();
+      // }
+    } catch (error) {
+      console.log("error in handleCheckout", error);
+    }
   };
 
   // remove cart item
@@ -85,15 +117,14 @@ useEffect(()=>{
             {authDetails?.token ? (
               <div className="row ">
                 <div className="row  container ">
-                 <div>
-                 <p className="col m-3 card p-3">
-                    Current Address <br />
-                    Name :{authDetails.user.name} <br />  
-                    Address :{authDetails.user.address} <br />
-                    Phone :{authDetails.user.phone} <br />
-                  </p>
-                 </div>
-                 
+                  <div>
+                    <p className="col m-3 card p-3">
+                      Current Address <br />
+                      Name :{authDetails.user.name} <br />
+                      Address :{authDetails.user.address} <br />
+                      Phone :{authDetails.user.phone} <br />
+                    </p>
+                  </div>
                 </div>
                 <button
                   className="btn btn-primary col m-4"
@@ -103,8 +134,9 @@ useEffect(()=>{
                 >
                   Update Address
                 </button>
-                <button className="btn btn-success  col m-4">Checkout</button>
-                
+                <button id="rzp-button1" className="btn btn-success  col m-4" onClick={handleCheckout}>
+                  Checkout
+                </button>
               </div>
             ) : (
               <>
@@ -118,20 +150,7 @@ useEffect(()=>{
                 </button>
               </>
             )}
-            <div>
-            <DropIn
-            options={{
-              authorization:clientToken,
-              paypal:{
-                folw:'vault'
-              } 
-            }}
-            onInstance={instance=>setInstance(instance)}
-          />
-          <button className="btn btn-primary" onClick={handlePayment}>MakePayment</button>
-            </div>
           </div>
-          
         </div>
       </div>
     </Layout>

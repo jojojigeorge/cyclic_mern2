@@ -1,69 +1,61 @@
 import slugify from "slugify";
 import productModel from "../models/productModel.js";
 import fs from "fs";
-import dotenv from 'dotenv'
-import braintree from "braintree";
+import dotenv from "dotenv";
+import Razorpay from "razorpay";
+import orderModel from "../models/orderModel .js";
+import * as crypto from "crypto";
 
-dotenv.config()
+dotenv.config();
 
-// import * as fs from 'fs'
-// import {readFileSync} from 'fs'
+var razorpayInstance = new Razorpay({
+  key_id: "rzp_test_Wg7kegePFl1cq5",
+  key_secret: "QhtPGEAr0l8Drug2oyHZsP2t",
+});
 
+// verify payment
+export const verifyPaymentController = async (req, res) => {
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body.response;
+  const { newOrder } = req.body;
 
-// braintree payment gateway
-var gateway = new braintree.BraintreeGateway({
-    environment: braintree.Environment.Sandbox,
-    merchantId: process.env.BRAINTREE_MARCHANT_KEY,
-    publicKey:process.env.BRAINTREE_PUBLIC_KEY,
-    privateKey: process.env.BRAINTREE_PRIVATE_KEY,
+  // Pass yours key_secret here
+  const key_secret = "QhtPGEAr0l8Drug2oyHZsP2t";
+
+  // STEP 8: Verification & Send Response to User
+
+  // Creating hmac object
+  let hmac = crypto.createHmac("sha256", key_secret);
+
+  // Passing the data to be hashed
+  hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+
+  // Creating the hmac in the required format
+  const generated_signature = hmac.digest("hex");
+
+  if (razorpay_signature === generated_signature) {
+    const neworder = await orderModel.findByIdAndUpdate(newOrder._id, { status: "Order placed" }, { new: true });
+    res.status(200).send({ success: true, message: "new order placed", neworder });
+  } else res.status(500).send({ success: false, message: "Error in verify payment" });
+};
+
+// create order
+export const createOrder = (req, res) => {
+  const { cartDetails } = req.body;
+  let total = 0;
+  cartDetails.map((p) => (total = total + p.price));
+  razorpayInstance.orders.create({ amount: Number(total), currency: "INR" }, async (err, order) => {
+    console.log("order created at nodejs server", order);
+    const newOrder = await orderModel.create({
+      products: cartDetails,
+      payment: order,
+      buyer: req.user._id,
+    });
+    //STEP 3 & 4:
+    console.log("new order is created", newOrder);
+    if (!err) res.status(200).send({ success: true, message: "New order added", newOrder, order });
+    else res.status(500).send({ success: false, message: "Error in creating new order", err });
   });
-
-// braintree gateway api
-export const BraintreeTokenController=async(req,res)=>{
-    try {
-        gateway.clientToken.generate({},function(err,response){
-            if(err){
-                res.status(500).send(err)
-            }else{
-                res.send(response)
-            }
-        })
-    } catch (error) {
-        console.log(error)
-    }
-}
-
-// braintree payment
-export const BraintreePaymentController=async(req,res)=>{
-    try {
-        const {cart,nonce}=req.body
-        let total=0
-        cart.map(i=>{total+=i.price})
-        let newTransaction=gateway.transaction.sale({
-            amount:total,
-            paymentMethodNonce:nonce,
-            options:{
-                submitForSettlement:true
-            }
-            
-        },
-        function(error,result){
-            if(result){
-                const order=new orderModel({
-                    product:cart,
-                    payment:result,
-                    buyer:req.user._id
-                }).save()
-                res.json({ok:true})
-            }else{
-                res.status(500).send(error)
-            }
-        }
-        )
-    } catch (error) {
-        console.log(error)
-    }
-}
+};
 
 export const createProductController = async (req, res) => {
   try {
@@ -106,7 +98,7 @@ export const getProductDetails = async (req, res) => {
   console.log(req.params);
   try {
     // const singleproduct=await productModel.findOne({slug:req.params.slug}).select("-photo")
-    const singleproduct = await productModel.findOne({ slug: req.params.slug }).populate("category").select("-photo");
+    const singleproduct = await productModel.findOne({ slug: req.params.slug }).select("-photo");
     res.status(200).send({ success: true, message: "single product details fetched", singleproduct });
   } catch (error) {
     console.log(error);
@@ -170,19 +162,31 @@ export const getProductPhoto = async (req, res) => {
   }
 };
 
+// no of product available
+export const numberofProducts=async(req,res)=>{
+  try {
+    const count = await productModel.find({});
+    // const count = await productModel.find({}).estimatedDocumentCount();
+    res.status(200).send({ success: true, message: "fetch the count of available products", countTotal: count.length});
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ success: false, message: "error in no of available products", error });
+  }
+}
+
 // product list per page
 export const productListController = async (req, res) => {
   try {
     const perPage = 4;
     const page = req.params.page ? req.params.page : 1;
-    const count = await productModel.find({});
+    
     const products = await productModel
       .find({})
       .select("-photo")
       .skip((page - 1) * perPage)
       .limit(perPage)
       .sort({ createdAt: -1 });
-    res.status(200).send({ success: true, message: "fetch product data per page", countTotal: count.length, products });
+    res.status(200).send({ success: true, message: "fetch product data per page",  products });
   } catch (error) {
     console.log(error);
     res.status(500).send({ success: false, message: "error in list product page", error });
@@ -230,4 +234,3 @@ export const updateProductController = async (req, res) => {
     // res.status(500).send({success:false,message:"Error in updating product",error})
   }
 };
-

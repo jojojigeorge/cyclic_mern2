@@ -5,17 +5,17 @@ const { Option } = Select
 const SingleProduct = ({value,setValue,handleSubmit,allcat}) => {
   // set product details form form
   const inputHandle = (e) => {
-    setValue({ ...value, [e.target.name]: e.target.value });
+    setValue({ ...value, [e.target.name]: e.target.value });  
   };
   return (  
-    <div>
+    <div>   
       <div className="p-3 w-75 card">
         <label>Select Category:</label> 
         <Select className="" name="category" size="large" value={value.category} placeholder="Select form categories" showSearch  onChange={(val) =>setValue({ ...value, category: val })}>
 
           {allcat?.map((c) => (
             <Option key={c._id} value={c._id}>
-              {c.category}
+              {c.category}  
             </Option>
           ))}
         </Select>
@@ -41,7 +41,7 @@ const SingleProduct = ({value,setValue,handleSubmit,allcat}) => {
         <button className="btn btn-primary mt-3" onClick={handleSubmit}>
           Submit Product
         </button> 
-      </div>
+      </div>  
     </div>
   );
 };

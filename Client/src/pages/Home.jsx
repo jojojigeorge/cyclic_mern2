@@ -8,8 +8,9 @@ import "../index.css";
 import { Checkbox, Radio } from "antd";
 import { Price } from "../components/Price.jsx";
 import { useSearch } from "../context/Search.jsx";
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";  
 import { useCart } from "../context/CartContext.jsx";
+import Carousel from "../components/Layout/Carousel.jsx";
 
 export const Home = () => {
   const [authDetails, setAuthDetails] = useAuth();
@@ -22,17 +23,21 @@ export const Home = () => {
   const [page, setPage] = useState(1);
   const [totalproduct, setTotalproduct] = useState(0);
 
-  // get search result
+  // contex get search result
   const [value, setValue] = useSearch();
+
+  // get total product number
+  const numberOfProduct = async () => {
+    const { data } = await axios.get(`/api/v1/product/number-products`);
+    setTotalproduct(data.countTotal);
+  };
 
   // get all products
   const getAllProducts = async () => {
     try {
       const { data } = await axios.get(`/api/v1/product/product-list/${page}`);
       // const { data } = await axios.get("/api/v1/product/get-allproduct");
-
       if (data.success) {
-        setTotalproduct(data.countTotal);
         setAllProducts(data.products);
       }
     } catch (error) {
@@ -58,6 +63,7 @@ export const Home = () => {
   useEffect(() => {
     getAllCategory();
     getAllProducts();
+    numberOfProduct();
   }, []);
 
   // show search result
@@ -89,7 +95,9 @@ export const Home = () => {
     }
   };
   useEffect(() => {
-    if (radio.length || selectedcat.length) filterProduct();
+    if (radio.length || selectedcat.length) 
+  {}  
+    filterProduct();
   }, [radio, selectedcat]);
 
   // load more products
@@ -141,7 +149,9 @@ export const Home = () => {
             </div>
           </div>
           <div className="col-md-10">
-            <h1 className="text-center">All Products</h1>
+            <h5 className="text-center">All Products</h5>
+            <Carousel/>
+            <br />  
             <div className="d-flex flex-wrap">
               {allproducts ? (
                 allproducts.map((p) => (
@@ -151,27 +161,24 @@ export const Home = () => {
                     </Link>
                     <div className="card-body text-center">
                       <h6 className="card-title">{p.name.substring(0, 20)}...</h6>
-                      {/* <p className="card-text">
-                    {p.description.substring(0, 30)}... 
-                  </p> */}  
+                      
                       <p className="card-text"> ₹ {p.price}</p>
-                      {/* <button className="btn btn-primary ms-1">More Details</button> */}
                       <button
                         className="btn btn-secondary mt-1"
                         onClick={(e) => {
                           e.preventDefault;
                           setCartDetails([...cartDetails, p]);
-                          localStorage.setItem("cart",JSON.stringify([...cartDetails,p]))
+                          localStorage.setItem("cart", JSON.stringify([...cartDetails, p]));
                           toast.success("product added to cart");
                         }}
                       >
                         ADD TO CART
-                      </button> 
+                      </button>
                     </div>
-                  </div>  
+                  </div>
                 ))
               ) : (
-                <div >
+                <div>
                   <p className="text-center">Loading...</p>
                   {/* {console.log('No result')} */}
                 </div>
@@ -190,7 +197,6 @@ export const Home = () => {
                 </button>
               )}
             </div>
-            {/* {totalproduct} */}
           </div>
         </div>
       </Layout>

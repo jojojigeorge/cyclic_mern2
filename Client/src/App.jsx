@@ -19,6 +19,8 @@ import ViewProduct from "./pages/admin/ViewProduct";
 import ProductDetails from "./pages/ProductDetails";
 import CartPage from "./pages/CartPage";
 import Profile from "./pages/user/Profile";
+import Order from "./pages/user/Order";
+import AllOrders from "./pages/admin/AllOrders";
 
 function App() {
       
@@ -29,7 +31,7 @@ function App() {
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/cart" element={<CartPage />} />
-      
+        
       <Route path="/login" element={<Login />} />
       <Route path="/registration" element={<Registration />} />
       <Route path="/forgotpassword" element={<ForgotPassword />} />
@@ -38,6 +40,7 @@ function App() {
       <Route path="/dashboard" element={<PrivateRoute/>}>
         <Route path="user" element={<UserDashboard/>}/>
         <Route path="user/userprofile" element={<Profile/>}/>
+        <Route path="user/user-order" element={<Order/>}/>
       </Route>
 
       {/* dashboard/admin */}
@@ -48,6 +51,7 @@ function App() {
         <Route path="admin/view-allproducts" element={<AllProducts/>}/>
         <Route path="admin/view-product/:slug" element={<ViewProduct/>}/>
         <Route path="admin/users" element={<Users/>}/>
+        <Route path="admin/all-orders" element={<AllOrders/>}/>
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

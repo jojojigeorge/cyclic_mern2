@@ -1,9 +1,19 @@
 import express from "express";
-import registerController, { forgotPasswordController, loginController, testController, updateUserDetailsController } from "../controllers/authController.js";
+import registerController, { allOrderController, forgotPasswordController, loginController, testController, updateOrderstatusController, updateUserDetailsController, userOrderController } from "../controllers/authController.js";
 import { isAdmin, requireSignIn } from "../middlewares/authMiddleware.js";
 
 // router object
 const router =express.Router()
+
+// change status of order
+router.put("/update-orderstatus/:orderId",requireSignIn,isAdmin,updateOrderstatusController) 
+
+
+// all orders in admin page
+router.get('/all-order',requireSignIn,isAdmin,allOrderController)
+
+// get all order in user page
+router.get('/user-order',requireSignIn,userOrderController)
 
 // routing for register user
 router.post('/register',registerController)
