@@ -2,10 +2,14 @@ import { comparePassword, hashPassword } from "../helpers/bcryptPassword.js"
 import userModels from "../models/userModels.js"
 import JWT from 'jsonwebtoken'
 import orderModel from "../models/orderModel .js"
+import dotenv from 'dotenv'
+dotenv.config()
 
 // fetch all user order
 export const userOrderController=async(req,res)=>{
   try {
+    // console.log(process.env.RAZOR_PAY_SECRET)
+
     const userorder=await orderModel.find({buyer:req.user._id}).populate("products", "-photo").populate('buyer',"name")
     // res.json(userorder)
     res.status(200).send({success:true,message:'fetched all user order',userorder})
@@ -17,6 +21,7 @@ export const userOrderController=async(req,res)=>{
 // fetch all  order in admin
 export const allOrderController=async(req,res)=>{
   try {
+    // console.log(process.env.RAZOR_PAY_SECRET)
     const allorder=await orderModel.find().populate("products", "-photo").populate('buyer',"name").sort({createdAt:-1})
     // res.json(userorder)
     res.status(200).send({success:true,message:'fetched all  order',allorder})
